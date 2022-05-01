@@ -1,4 +1,4 @@
-module borellif/math-web-api
+module github.com/borellif/math-web-api
 
 go 1.18
 
