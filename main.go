@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -13,8 +11,6 @@ import (
 )
 
 func main() {
-	fmt.Println("Hello world!")
-
 	// Sets location of html files
 	engine := html.New("./views", ".html")
 
