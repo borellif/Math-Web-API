@@ -21,15 +21,15 @@ https://www.getpostman.com/collections/56921d2e123a15f816d1
             }
           ```
         - 5 API Calls:
-            1. /api/v1/min
+            - /api/v1/min
                 - both fields required
-            2. /api/v1/max
+            - /api/v1/max
                 - both fields required
-            3. /api/v1/avg
+            - /api/v1/avg
                 - quantifier not needed
-            4. /api/v1/median
+            - /api/v1/median
                 - quantifier not needed
-            5. /api/v1/percentile
+            - /api/v1/percentile
                 - both fields required
     - Array only accepts int64 types (for now)
 
