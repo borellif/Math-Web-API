@@ -175,17 +175,21 @@ func Percentile(c *fiber.Ctx) error {
 }
 
 func arrayToString(a []int64, delim string) string {
+	// Essentially pretty prints the string
 	return strings.Trim(strings.Replace(fmt.Sprint(a), " ", delim, -1), "[]")
 }
 
 func jsonToStruct(c *fiber.Ctx, omitQuantifer bool) ([]int64, int64, error) {
 
+	// Create new object of FloatArray Struct
 	array := new(FloatArray)
 
+	// Prase the input JSON from fiber BASED on the Accept header and default JSON Marshaller
 	if err := c.BodyParser(array); err != nil {
 		return nil, -1, err
 	}
 
+	// Split input array by ,
 	arrayStrings := strings.Split(array.Array, ",")
 
 	if len(arrayStrings) < 1 {
@@ -195,6 +199,7 @@ func jsonToStruct(c *fiber.Ctx, omitQuantifer bool) ([]int64, int64, error) {
 	var arrayValues []int64
 	var err error
 
+	// For loop will take every split string value in arrayStrings and try and format it into a int64 type
 	for _, value := range arrayStrings {
 		value = strings.Trim(value, " ")
 		parsedInt, _ := strconv.ParseInt(value, 10, 64)
@@ -208,6 +213,7 @@ func jsonToStruct(c *fiber.Ctx, omitQuantifer bool) ([]int64, int64, error) {
 		arrayValues = append(arrayValues, parsedInt)
 	}
 
+	// If not an api call that needs the quantifier, skip parsing that JSON
 	if !omitQuantifer {
 
 		if quantifier, err := array.Quantifier.Int64(); err != nil {
