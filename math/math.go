@@ -218,3 +218,45 @@ func Percentile(c *fiber.Ctx) error {
 func arrayToString(a []float64, delim string) string {
 	return strings.Trim(strings.Replace(fmt.Sprint(a), " ", delim, -1), "[]")
 }
+
+func jsonToStruct(c *fiber.Ctx, omitQuantifer bool) ([]int64, int64, error) {
+
+	array := new(FloatArray)
+
+	if err := c.BodyParser(array); err != nil {
+		return nil, -1, err
+	}
+
+	arrayStrings := strings.Split(array.Array, ",")
+
+	if len(arrayStrings) < 1 {
+		return nil, -1, errors.New("array json is null")
+	}
+
+	var arrayValues []int64
+	var err error
+
+	for _, value := range arrayStrings {
+		value = strings.Trim(value, " ")
+		parsedInt, _ := strconv.ParseInt(value, 10, 64)
+
+		if err != nil {
+			return nil, -1, errors.New(fmt.Sprint("Could not parse: ", value, " - ", err.Error()))
+		} else if value == "" {
+			return nil, -1, errors.New("input array is malformed")
+		}
+
+		arrayValues = append(arrayValues, parsedInt)
+	}
+
+	if !omitQuantifer {
+
+		if quantifier, err := array.Quantifier.Int64(); err != nil {
+			return nil, -1, err
+		} else {
+			return arrayValues, quantifier, nil
+		}
+	} else {
+		return arrayValues, -1, nil
+	}
+}
