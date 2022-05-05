@@ -149,6 +149,14 @@ func Percentile(c *fiber.Ctx) error {
 		return c.Status(500).SendString(err.Error())
 	}
 
+	if quantifier > 100 {
+		// Returns a 500 with error code
+		return fmt.Errorf("quantifier percentile is larger than max 100")
+	} else if quantifier < 0 {
+		// Returns a 500 with error code
+		return fmt.Errorf("quantifier percentile is smaller than min 0")
+	}
+
 	arrayLength := len(arrayValues)
 
 	// Quick sort algorithm using function comparitor
