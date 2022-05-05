@@ -1,97 +1,87 @@
 package math
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"sort"
+	"strconv"
 	"strings"
 
+	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
 )
 
 type FloatArray struct {
-	Array      []float64 `json:"array"`
-	Quantifier int       `json:"quantifier"`
+	Array      string      `json:"array"`
+	Quantifier json.Number `json:"quantifier,omitempty"`
 }
 
 func Minimum(c *fiber.Ctx) error {
 
-	array := new(FloatArray)
-	array.Array = append(array.Array, 1, 1, -1, 6, 5, 6, 7, 8, 9, 10)
-	array.Quantifier = 30
+	arrayValues, quantifier, err := jsonToStruct(c, false)
 
-	// if err := c.BodyParser(array); err != nil {
-	// 	c.Status(503).SendString(err.Error())
-	// 	return err
-	// }
+	if err != nil {
+		return c.Status(500).SendString(err.Error())
+	}
 
-	arrayLength := len(array.Array)
+	arrayLength := len(arrayValues)
 
-	if array.Quantifier > arrayLength {
+	if quantifier > int64(arrayLength) {
 		// Returns a 500 with error code
 		return fmt.Errorf("quantifier is larger than the size of the input array")
-	} else if array.Quantifier < 1 {
+	} else if quantifier < 1 {
 		// Returns a 500 with error code
 		return fmt.Errorf("quantifier should be larger than 0 and non-null")
 	} else if arrayLength < 1 {
 		return fmt.Errorf("array should be larger than 0 and non-null")
 	}
 
-	c.JSON(array)
-
 	// Appends the JSON array into a new input array to be sorted
-	var inputArray []float64
-	var outputArray []float64
-	inputArray = append(inputArray, array.Array...)
+	var outputArray []int64
 
-	// Quick sort algorithm
-	sort.Float64s(inputArray)
+	// Quick sort algorithm using function comparitor
+	sort.Slice(arrayValues, func(i, j int) bool { return arrayValues[i] < arrayValues[j] })
 
 	// Writes quantifier length of items to the output array
-	for i := 0; i < array.Quantifier; i++ {
-		outputArray = append(outputArray, inputArray[i])
+	for i := 0; int64(i) < quantifier; i++ {
+		outputArray = append(outputArray, arrayValues[i])
 	}
 
 	// Returns formatted string of output array as http response
 	return c.SendString(arrayToString(outputArray, ", "))
+
 }
 
 func Maximum(c *fiber.Ctx) error {
 
-	array := new(FloatArray)
-	array.Array = append(array.Array, 1, 1, -1, 6, 5, 6, 7, 8, 9, 10)
-	array.Quantifier = 1
+	arrayValues, quantifier, err := jsonToStruct(c, false)
 
-	// if err := c.BodyParser(array); err != nil {
-	// 	c.Status(503).SendString(err.Error())
-	// 	return err
-	// }
+	if err != nil {
+		return c.Status(500).SendString(err.Error())
+	}
 
-	arrayLength := len(array.Array)
+	arrayLength := len(arrayValues)
 
-	if array.Quantifier > arrayLength {
+	if quantifier > int64(arrayLength) {
 		// Returns a 500 with error code
 		return fmt.Errorf("quantifier is larger than the size of the input array")
-	} else if array.Quantifier < 1 {
+	} else if quantifier < 1 {
 		// Returns a 500 with error code
 		return fmt.Errorf("quantifier should be larger than 0 and non-null")
 	} else if arrayLength < 1 {
 		return fmt.Errorf("array should be larger than 0 and non-null")
 	}
 
-	c.JSON(array)
-
 	// Appends the JSON array into a new input array to be sorted
-	var inputArray []float64
-	var outputArray []float64
-	inputArray = append(inputArray, array.Array...)
+	var outputArray []int64
 
-	// Quick sort algorithm
-	sort.Float64s(inputArray)
+	// Quick sort algorithm using function comparitor
+	sort.Slice(arrayValues, func(i, j int) bool { return arrayValues[i] > arrayValues[j] })
 
 	// Writes quantifier length of items to the output array
-	for i := len(inputArray) - 1; i > len(inputArray)-array.Quantifier-1; i-- {
-		outputArray = append(outputArray, inputArray[i])
+	for i := 0; int64(i) < quantifier; i++ {
+		outputArray = append(outputArray, arrayValues[i])
 	}
 
 	// Returns formatted string of output array as http response
@@ -99,33 +89,19 @@ func Maximum(c *fiber.Ctx) error {
 }
 
 func Average(c *fiber.Ctx) error {
-	array := new(FloatArray)
-	array.Array = append(array.Array, 1, 1, -1, 6, 5, 6, 7, 8, 9, 10)
+	arrayValues, _, err := jsonToStruct(c, true)
 
-	// if err := c.BodyParser(array); err != nil {
-	// 	c.Status(503).SendString(err.Error())
-	// 	return err
-	// }
-
-	arrayLength := len(array.Array)
-
-	if array.Quantifier > arrayLength {
-		// Returns a 500 with error code
-		return fmt.Errorf("quantifier is larger than the size of the input array")
-	} else if array.Quantifier < 1 {
-		// Returns a 500 with error code
-		return fmt.Errorf("quantifier should be larger than 0 and non-null")
-	} else if arrayLength < 1 {
-		return fmt.Errorf("array should be larger than 0 and non-null")
+	if err != nil {
+		return c.Status(500).SendString(err.Error())
 	}
 
-	c.JSON(array)
+	arrayLength := len(arrayValues)
 
 	// Appends the JSON array into a new input array to be sorted
 	var sum float64
 
-	for _, value := range array.Array {
-		sum += value
+	for _, value := range arrayValues {
+		sum += float64(value)
 	}
 
 	avg := sum / float64(arrayLength)
@@ -135,43 +111,30 @@ func Average(c *fiber.Ctx) error {
 }
 
 func Median(c *fiber.Ctx) error {
-	array := new(FloatArray)
-	array.Array = append(array.Array, 1, 1, -1, 6, 5, 6, 7, 8, 9, 10, 11, 13, 301)
+	arrayValues, _, err := jsonToStruct(c, true)
 
-	// if err := c.BodyParser(array); err != nil {
-	// 	c.Status(503).SendString(err.Error())
-	// 	return err
-	// }
-
-	arrayLength := len(array.Array)
-
-	if arrayLength < 1 {
-		// Returns a 500 with error code
-		return fmt.Errorf("array should be larger than 0 and non-null")
+	if err != nil {
+		return c.Status(500).SendString(err.Error())
 	}
 
-	c.JSON(array)
+	arrayLength := len(arrayValues)
 
-	// Appends the JSON array into a new input array to be sorted
-	var inputArray []float64
-	inputArray = append(inputArray, array.Array...)
-
-	// Quick sort algorithm
-	sort.Float64s(inputArray)
+	// Quick sort algorithm using function comparitor
+	sort.Slice(arrayValues, func(i, j int) bool { return arrayValues[i] > arrayValues[j] })
 
 	// Checking to see if the length of the array is even or odd
 	isOdd := arrayLength%2 > 0
 	var median float64
 
 	if isOdd {
-		// This will return an integer even though function returns a float64
+		// This will return an integer even though function returns a int64
 		middle := math.Floor(float64(arrayLength) / 2)
-		median = inputArray[int(middle)]
+		median = float64(arrayValues[int(middle)])
 	} else {
 		middle := arrayLength / 2
-		sum := inputArray[middle]
-		sum += inputArray[middle+1]
-		median = sum / 2
+		sum := arrayValues[middle]
+		sum += arrayValues[middle+1]
+		median = float64(sum) / 2
 	}
 
 	// Returns formatted string of output array as http response
@@ -179,32 +142,20 @@ func Median(c *fiber.Ctx) error {
 }
 
 func Percentile(c *fiber.Ctx) error {
-	array := new(FloatArray)
-	array.Array = append(array.Array, 1, 1, -1, 6, 5, 6, 7, 8, 9, 10, 11, 13, 301)
-	array.Quantifier = 100
 
-	// if err := c.BodyParser(array); err != nil {
-	// 	c.Status(503).SendString(err.Error())
-	// 	return err
-	// }
+	arrayValues, quantifier, err := jsonToStruct(c, false)
 
-	arrayLength := len(array.Array)
-
-	if arrayLength < 1 {
-		return fmt.Errorf("array should be larger than 0 and non-null")
+	if err != nil {
+		return c.Status(500).SendString(err.Error())
 	}
 
-	c.JSON(array)
+	arrayLength := len(arrayValues)
 
-	// Appends the JSON array into a new input array to be sorted
-	var inputArray []float64
-	inputArray = append(inputArray, array.Array...)
-
-	// Quick sort algorithm
-	sort.Float64s(inputArray)
+	// Quick sort algorithm using function comparitor
+	sort.Slice(arrayValues, func(i, j int) bool { return arrayValues[i] < arrayValues[j] })
 
 	// Ordinal Rank formula and uses golang math.ceiling function. Returns float but will be an integer
-	ordinalRank := int(math.Ceil(((float64(array.Quantifier) / 100) * float64(arrayLength))))
+	ordinalRank := int(math.Ceil(((float64(quantifier) / 100) * float64(arrayLength))))
 
 	// Edgecase where we are grabbing the 0th percentile
 	if ordinalRank == 0 {
@@ -212,10 +163,10 @@ func Percentile(c *fiber.Ctx) error {
 	}
 
 	// Returns formatted string as http response by grabbing index of the ordinal rank (x - 1)
-	return c.SendString(fmt.Sprint(inputArray[ordinalRank-1]))
+	return c.SendString(fmt.Sprint(arrayValues[ordinalRank-1]))
 }
 
-func arrayToString(a []float64, delim string) string {
+func arrayToString(a []int64, delim string) string {
 	return strings.Trim(strings.Replace(fmt.Sprint(a), " ", delim, -1), "[]")
 }
 
