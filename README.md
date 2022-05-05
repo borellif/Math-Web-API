@@ -34,4 +34,4 @@ https://www.getpostman.com/collections/56921d2e123a15f816d1
     - Array only accepts int64 types (for now)
 
 ## Starting application
-Run ```go run main.go ``` in order to start fiber server. Server will haver server information in terminal. 
+Run ```go run main.go``` in order to start fiber server. Server will haver server information in terminal. 
